@@ -39,53 +39,65 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Giriş Yap</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
+      <div className="w-full max-w-md p-8 space-y-6 bg-[#1A1A1A] rounded-xl shadow-lg">
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-white">Giriş Yap</h1>
+          <p className="text-sm text-[#8A8A8D]">
             Hesabınıza giriş yapmak için e-posta ve şifrenizi kullanın
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-posta</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="ornek@email.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-                suppressHydrationWarning
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Şifre</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                suppressHydrationWarning
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
-            </Button>
-            <div className="text-sm text-center text-gray-500 dark:text-gray-400">
-              Hesabınız yok mu?{" "}
-              <Link href="/register" className="text-primary hover:underline">
-                Kayıt Ol
-              </Link>
-            </div>
-          </CardFooter>
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium text-[#8A8A8D]">
+              E-posta
+            </label>
+            <input
+              id="email"
+              type="email"
+              placeholder="ornek@email.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-md text-white placeholder-[#6A6A6D] focus:outline-none focus:ring-2 focus:ring-[#3A3A3A] focus:border-transparent"
+              required
+              suppressHydrationWarning
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium text-[#8A8A8D]">
+              Şifre
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-md text-white placeholder-[#6A6A6D] focus:outline-none focus:ring-2 focus:ring-[#3A3A3A] focus:border-transparent"
+              required
+              suppressHydrationWarning
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-3 px-4 bg-[#2A2A2A] hover:bg-[#3A3A3A] text-white font-medium rounded-lg transition-colors duration-200"
+            disabled={loading}
+          >
+            {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+          </button>
         </form>
-      </Card>
+
+        <div className="text-center">
+          <p className="text-sm text-[#8A8A8D]">
+            Hesabınız yok mu?{" "}
+            <Link href="/register" className="text-[#8A8A8D] hover:text-white font-medium">
+              Kayıt Ol
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   )
 } 

@@ -33,6 +33,9 @@ export default function DataPage() {
   const [tables, setTables] = useState([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedTable, setSelectedTable] = useState(null)
+  const [tableOrders, setTableOrders] = useState([])
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
   const [newTable, setNewTable] = useState({
     number: '',
     capacity: '',
@@ -51,6 +54,19 @@ export default function DataPage() {
       setTables([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchTableOrders = async (tableId) => {
+    try {
+      const response = await api.get('/api/orders')
+      const orders = response.data.data || []
+      const tableOrders = orders.filter(order => order.table._id === tableId)
+      setTableOrders(tableOrders)
+    } catch (error) {
+      console.error('Siparişler yüklenirken hata:', error)
+      toast.error('Siparişler yüklenirken bir hata oluştu')
+      setTableOrders([])
     }
   }
 
@@ -76,7 +92,6 @@ export default function DataPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      // Postman'deki formata göre veriyi hazırla
       const tableData = {
         number: parseInt(newTable.number),
         name: `Masa ${newTable.number}`,
@@ -86,8 +101,6 @@ export default function DataPage() {
         active: true,
         qrCode: ''
       }
-
-      console.log('Gönderilen veri:', tableData) // Debug için
 
       const response = await api.post('/api/tables', tableData)
       
@@ -102,7 +115,7 @@ export default function DataPage() {
         fetchTables()
       }
     } catch (error) {
-      console.error('Masa eklenirken hata detayı:', error.response?.data) // Detaylı hata bilgisi
+      console.error('Masa eklenirken hata detayı:', error.response?.data)
       if (error.response?.status === 401) {
         toast.error('Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.')
       } else if (error.response?.status === 400) {
@@ -119,7 +132,8 @@ export default function DataPage() {
     switch (status?.toLowerCase()) {
       case 'available':
       case 'müsait':
-        return 'bg-green-100 border-green-500 dark:bg-green-900/30 dark:border-green-400 dark:text-green-100'
+      case 'boş':
+        return 'bg-green-50/50 border-green-300 dark:bg-green-900/10 dark:border-green-400/50 dark:text-green-100'
       case 'occupied':
       case 'dolu':
         return 'bg-red-100 border-red-500 dark:bg-red-900/30 dark:border-red-400 dark:text-red-100'
@@ -131,8 +145,17 @@ export default function DataPage() {
     }
   }
 
-  const handleTableClick = (table) => {
-    toast.info(`Masa ${table.number || table.tableNumber || 'Bilinmeyen'} seçildi`)
+  const handleTableClick = async (table) => {
+    setSelectedTable(table)
+    await fetchTableOrders(table._id)
+    setIsOrderModalOpen(true)
+  }
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('tr-TR', {
+      style: 'currency',
+      currency: 'TRY'
+    }).format(price)
   }
 
   return (
@@ -156,7 +179,10 @@ export default function DataPage() {
                 </div>
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                   <DialogTrigger asChild>
-                    <Button>Yeni Masa Ekle</Button>
+                    <Button>
+                      <IconPlus className="mr-2 h-4 w-4" />
+                      Yeni Masa Ekle
+                    </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
@@ -214,11 +240,11 @@ export default function DataPage() {
               
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 px-4 lg:px-6">
                 {loading ? (
-                  <div className="flex items-center justify-center h-64">
+                  <div className="col-span-full flex items-center justify-center h-64">
                     <p className="text-lg text-muted-foreground">Masalar yükleniyor...</p>
                   </div>
                 ) : tables.length === 0 ? (
-                  <div className="flex items-center justify-center h-64">
+                  <div className="col-span-full flex items-center justify-center h-64">
                     <p className="text-lg text-muted-foreground">Henüz masa bulunmuyor</p>
                   </div>
                 ) : (
@@ -251,6 +277,66 @@ export default function DataPage() {
           </div>
         </div>
       </SidebarInset>
+
+      {/* Sipariş Detay Modal */}
+      <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {selectedTable ? `Masa ${selectedTable.number} Siparişleri` : 'Masa Siparişleri'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {tableOrders.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-muted-foreground">Bu masada aktif sipariş bulunmuyor.</p>
+              </div>
+            ) : (
+              tableOrders.map((order) => (
+                <Card key={order._id} className="p-4">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">Sipariş No: {order._id}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Müşteri: {order.customer.name}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{formatPrice(order.totalAmount)}</p>
+                        <p className="text-sm text-muted-foreground">{order.status}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {order.items.map((item) => (
+                        <div key={item._id} className="flex justify-between items-center">
+                          <div>
+                            <p>{item.product.name}</p>
+                            {item.notes && (
+                              <p className="text-sm text-muted-foreground">{item.notes}</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p>{item.quantity} adet</p>
+                            <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {order.specialRequests && (
+                      <p className="text-sm text-muted-foreground">
+                        Özel İstekler: {order.specialRequests}
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   )
 } 
